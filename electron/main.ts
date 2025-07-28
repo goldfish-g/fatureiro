@@ -3,7 +3,6 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import * as fs from 'fs'
 import { dialog } from 'electron'
-import { Invoice } from '@/App'
 // Supported languages
 const SUPPORTED_LANGUAGES = ['en', 'pt']
 // Theme config path for storing theme preference
