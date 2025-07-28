@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { INVOICE_CONFIG } from "@/lib/config"
 import { cn } from "./lib/utils"
+import { Tabs, TabsList, TabsTrigger } from "./components/ui/tabs"
+import { InvoiceSubmission } from "./components/invoice-submission"
 
 export default function InvoiceRegistration() {
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
@@ -20,6 +22,7 @@ export default function InvoiceRegistration() {
   const [searchTerm, setSearchTerm] = useState("")
   const [sortColumn, setSortColumn] = useState<keyof Invoice>("number")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [tab, setTab] = useState<"registration" | "submission">("registration")
   // Persist theme using Electron's file system via preload API
   const [theme, setThemeState] = useState<"system" | "dark" | "light">("system")
   const [systemTheme, setSystemTheme] = useState<"dark" | "light">("light")
@@ -188,11 +191,21 @@ export default function InvoiceRegistration() {
   }
 
   return (
-    <div className={cn("p-6 space-y-6 bg-background text-foreground w-screen h-screen", theme === "system" ? systemTheme : theme)}>
+    <div className={cn("p-6 space-y-6 bg-background text-foreground w-screen h-screen flex flex-col", theme === "system" ? systemTheme : theme)}>
       <div className="flex w-full justify-between items-center">
         <h1 className="text-2xl font-bold">
           {workspaceFolder ? workspaceFolder.split(/[/\\]/).pop() : ""}
         </h1>
+        <Tabs>
+          <TabsList>
+            <TabsTrigger value="registration" onClick={() => setTab("registration")}>
+              Registration
+            </TabsTrigger>
+            <TabsTrigger value="submission" onClick={() => setTab("submission")}>
+              Submission
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
         <div className="flex gap-2 items-center">
           <Button
             variant="outline"
@@ -272,7 +285,8 @@ export default function InvoiceRegistration() {
         </Button>
       </div>
 
-      {
+      {tab === "registration" ? (
+
         loadingInvoices ? (
           <div className="text-center text-gray-500">Loading invoices...</div>
         ) : (
@@ -285,6 +299,9 @@ export default function InvoiceRegistration() {
             onSort={handleSort}
           />
         )
+      ) : (
+        <InvoiceSubmission invoices={filteredAndSortedInvoices()} />
+      )
       }
 
       <AddInvoiceDialog
