@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -50,6 +50,9 @@ const SortableHeader = ({
 export function InvoiceTable({ invoices, onUpdateInvoice, onDeleteInvoice, sortColumn, sortDirection, onSort }: InvoiceTableProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingData, setEditingData] = useState<Partial<Invoice>>({})
+  const [selectedRow, setSelectedRow] = useState<number | null>(null)
+  const rowRefs = useRef<(HTMLTableRowElement | null)[]>([])
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("pt-PT", {
@@ -85,12 +88,38 @@ export function InvoiceTable({ invoices, onUpdateInvoice, onDeleteInvoice, sortC
       saveEditing()
     } else if (e.key === "Escape") {
       cancelEditing()
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault()
+      setSelectedRow((prev) => {
+        if (prev === null) return 0
+        return Math.min((prev ?? 0) + 1, invoices.length - 1)
+      })
+      const nextIdx = (selectedRow ?? 0) + 1;
+      const rowEl = document.getElementById(invoices[nextIdx]?.id);
+      if (rowEl && scrollContainerRef.current) {
+        rowEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault()
+      setSelectedRow((prev) => {
+        if (prev === null) return 0
+        return Math.max((prev ?? 0) - 1, 0)
+      })
+      const prevIdx = (selectedRow ?? 0) - 2;
+      if (prevIdx < 0) {
+        scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      const rowEl = document.getElementById(invoices[prevIdx]?.id);
+      if (rowEl && scrollContainerRef.current) {
+        rowEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
     }
   }
 
   return (
     <div className="border rounded-lg flex-1 overflow-hidden">
-      <div className="h-full overflow-y-auto">
+      <div className="h-full overflow-y-auto" ref={scrollContainerRef} tabIndex={-1}>
         <Table className="min-w-full">
           <TableHeader className="sticky top-0 z-10 bg-white shadow-sm">
             <TableRow>
@@ -124,117 +153,130 @@ export function InvoiceTable({ invoices, onUpdateInvoice, onDeleteInvoice, sortC
                 </TableCell>
               </TableRow>
             ) : (
-              invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">
-                    {editingId === invoice.id ? (
-                      <Input
-                        value={editingData.number || ""}
-                        onChange={(e) => setEditingData((prev) => ({ ...prev, number: e.target.value }))}
-                        onKeyDown={handleKeyDown}
-                        className="w-full"
-                        placeholder="PREFIX001"
-                      />
-                    ) : (
-                      invoice.number
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {editingId === invoice.id ? (
-                      <Input
-                        value={editingData.atcud || ""}
-                        onChange={(e) => setEditingData((prev) => ({ ...prev, atcud: e.target.value }))}
-                        onKeyDown={handleKeyDown}
-                        className="w-full"
-                      />
-                    ) : (
-                      invoice.atcud
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {editingId === invoice.id ? (
-                      <Input
-                        value={editingData.nif || ""}
-                        onChange={(e) => setEditingData((prev) => ({ ...prev, nif: e.target.value }))}
-                        onKeyDown={handleKeyDown}
-                        className="w-full"
-                      />
-                    ) : (
-                      invoice.nif
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {editingId === invoice.id ? (
-                      <Input
-                        type="date"
-                        value={editingData.date || ""}
-                        onChange={(e) => setEditingData((prev) => ({ ...prev, date: e.target.value }))}
-                        onKeyDown={handleKeyDown}
-                        className="w-full"
-                      />
-                    ) : (
-                      formatDate(invoice.date)
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {editingId === invoice.id ? (
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={editingData.amount || ""}
-                        onChange={(e) =>
-                          setEditingData((prev) => ({ ...prev, amount: Number.parseFloat(e.target.value) || 0 }))
-                        }
-                        onKeyDown={handleKeyDown}
-                        className="w-full"
-                      />
-                    ) : (
-                      formatCurrency(invoice.amount)
-                    )}
-                  </TableCell>
-                  <TableCell className="flex justify-center">
-                    {editingId === invoice.id ? (
-                      <div className="flex gap-1">
-                        <Button size="icon" variant="ghost" onClick={saveEditing}>
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" onClick={cancelEditing}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <Button size="icon" variant="ghost" onClick={() => startEditing(invoice)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="icon" variant="ghost">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure you wish to delete this invoice?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => onDeleteInvoice(invoice.id)}
-                              >
-                                Delete
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
+              invoices.map((invoice, idx) => {
+                const isSelected = selectedRow === idx
+                return (
+                  <TableRow
+                    key={invoice.id}
+                    id={invoice.id}
+                    tabIndex={0}
+                    ref={el => rowRefs.current[idx] = el}
+                    className={isSelected ? "bg-blue-100/60" : ""}
+                    onClick={() => setSelectedRow(idx)}
+                    onKeyDown={handleKeyDown}
+                    style={{ cursor: "pointer" }}
+                    aria-selected={isSelected}
+                  >
+                    <TableCell className="font-medium">
+                      {editingId === invoice.id ? (
+                        <Input
+                          value={editingData.number || ""}
+                          onChange={(e) => setEditingData((prev) => ({ ...prev, number: e.target.value }))}
+                          onKeyDown={handleKeyDown}
+                          className="w-full"
+                          placeholder="PREFIX001"
+                        />
+                      ) : (
+                        invoice.number
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingId === invoice.id ? (
+                        <Input
+                          value={editingData.atcud || ""}
+                          onChange={(e) => setEditingData((prev) => ({ ...prev, atcud: e.target.value }))}
+                          onKeyDown={handleKeyDown}
+                          className="w-full"
+                        />
+                      ) : (
+                        invoice.atcud
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingId === invoice.id ? (
+                        <Input
+                          value={editingData.nif || ""}
+                          onChange={(e) => setEditingData((prev) => ({ ...prev, nif: e.target.value }))}
+                          onKeyDown={handleKeyDown}
+                          className="w-full"
+                        />
+                      ) : (
+                        invoice.nif
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingId === invoice.id ? (
+                        <Input
+                          type="date"
+                          value={editingData.date || ""}
+                          onChange={(e) => setEditingData((prev) => ({ ...prev, date: e.target.value }))}
+                          onKeyDown={handleKeyDown}
+                          className="w-full"
+                        />
+                      ) : (
+                        formatDate(invoice.date)
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {editingId === invoice.id ? (
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={editingData.amount || ""}
+                          onChange={(e) =>
+                            setEditingData((prev) => ({ ...prev, amount: Number.parseFloat(e.target.value) || 0 }))
+                          }
+                          onKeyDown={handleKeyDown}
+                          className="w-full"
+                        />
+                      ) : (
+                        formatCurrency(invoice.amount)
+                      )}
+                    </TableCell>
+                    <TableCell className="flex justify-center">
+                      {editingId === invoice.id ? (
+                        <div className="flex gap-1">
+                          <Button size="icon" variant="ghost" onClick={saveEditing}>
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" onClick={cancelEditing}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <Button size="icon" variant="ghost" onClick={() => startEditing(invoice)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="icon" variant="ghost">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure you wish to delete this invoice?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => onDeleteInvoice(invoice.id)}
+                                >
+                                  Delete
+                                  </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>
