@@ -294,12 +294,31 @@ export function App() {
             </div>
           )}
         </div>
-        {tab === "registration" && (
+
+        <div
+          className="hidden lg:flex items-center gap-4 border-border border-[1px] rounded-md px-3 py-1.5 shadow-xs"
+        >
+          <div>
+            Total mensal:
+          </div>
+          <div
+            className="font-bold"
+          >
+            {filteredAndSortedInvoices().reduce((acc, invoice) => acc + invoice.amount, 0).toFixed(2)} €
+          </div>
+          <div
+            className="text-xs"
+          >
+            ({filteredAndSortedInvoices().length} faturas)
+          </div>
+        </div>
+
+        {tab === "registration" ? (
           <Button onClick={() => setIsDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             {strings["add_invoice"] || "Add Invoice"}
           </Button>
-        )}
+        ) : <div />}
       </div>
 
       {tab === "registration" ? (

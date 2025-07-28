@@ -231,6 +231,7 @@ async function createWindow() {
       webviewTag: true,
     },
   })
+  win.setMenuBarVisibility(false)
 
   // Test active push message to Renderer-process.
   win.webContents.on('did-finish-load', () => {
