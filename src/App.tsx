@@ -196,7 +196,7 @@ export default function InvoiceRegistration() {
         <h1 className="text-2xl font-bold">
           {workspaceFolder ? workspaceFolder.split(/[/\\]/).pop() : ""}
         </h1>
-        <Tabs>
+        <Tabs value={tab}>
           <TabsList>
             <TabsTrigger value="registration" onClick={() => setTab("registration")}>
               Registration
@@ -269,20 +269,24 @@ export default function InvoiceRegistration() {
               </SelectContent>
             </Select>
           </div>
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search invoices..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          {tab === "registration" && (
+            <div className="relative w-full max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search invoices..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          )}
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Invoice
-        </Button>
+        {tab === "registration" && (
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Invoice
+          </Button>
+        )}
       </div>
 
       {tab === "registration" ? (
