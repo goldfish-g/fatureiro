@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Check, X, Edit } from "lucide-react"
-import type { Invoice } from "@/App"
 import { ChevronUp, ChevronDown } from "lucide-react"
 
 interface InvoiceTableProps {

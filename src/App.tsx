@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Laptop, Moon, Plus, Sun } from "lucide-react"
+import { Laptop, Moon, Plus, Sun, Folder } from "lucide-react"
 import { InvoiceTable } from "@/components/invoice-table"
 import { AddInvoiceDialog } from "@/components/add-invoice-dialog"
 import { Input } from "@/components/ui/input"
@@ -11,19 +11,11 @@ import { Search } from "lucide-react"
 import { INVOICE_CONFIG } from "@/lib/config"
 import { cn } from "./lib/utils"
 
-export interface Invoice {
-  id: string
-  number: string
-  atcud: string
-  nif: string
-  date: string
-  amount: number
-}
-
 export default function InvoiceRegistration() {
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
   const [selectedMonth, setSelectedMonth] = useState<string>((new Date().getMonth() + 1).toString())
   const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [loadingInvoices, setLoadingInvoices] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [sortColumn, setSortColumn] = useState<keyof Invoice>("number")
@@ -31,6 +23,7 @@ export default function InvoiceRegistration() {
   // Persist theme using Electron's file system via preload API
   const [theme, setThemeState] = useState<"system" | "dark" | "light">("system")
   const [systemTheme, setSystemTheme] = useState<"dark" | "light">("light")
+  const [workspaceFolder, setWorkspaceFolder] = useState<string | null>(null)
   useEffect(() => {
     const themeGetter = async () => {
       const initialTheme = await window.theme.getTheme?.()
@@ -38,11 +31,31 @@ export default function InvoiceRegistration() {
       setThemeState(initialTheme || "system")
       setSystemTheme(initialSystemTheme || "light")
     }
+    const fetchWorkspace = async () => {
+      const folder = await window.workspace.getFolder?.()
+      setWorkspaceFolder(folder)
+    }
     themeGetter()
+    fetchWorkspace()
   }, [])
+
+  // Load invoices when year/month or workspaceFolder changes
+  useEffect(() => {
+    if (!workspaceFolder) return
+    setLoadingInvoices(true)
+    window.invoices.read(selectedYear, selectedMonth).then((data) => {
+      setInvoices(Array.isArray(data) ? data : [])
+      setLoadingInvoices(false)
+    })
+  }, [selectedYear, selectedMonth, workspaceFolder])
+
+  const handleChangeWorkspace = async () => {
+    const folder = await window.workspace.pickFolder()
+    if (folder) setWorkspaceFolder(folder)
+  }
   const setTheme = async (newTheme: "system" | "dark" | "light") => {
     setThemeState(newTheme)
-    await window.theme.setTheme?.(newTheme)
+    await window.theme.setTheme(newTheme)
   }
 
 
@@ -63,16 +76,22 @@ export default function InvoiceRegistration() {
     { value: "12", label: "December" },
   ]
 
+  const persistInvoices = (newInvoices: Invoice[]) => {
+    setInvoices(newInvoices)
+    window.invoices?.write(selectedYear, selectedMonth, newInvoices)
+  }
+
   const addInvoice = (invoice: Omit<Invoice, "id">) => {
     const newInvoice: Invoice = {
       ...invoice,
       id: Date.now().toString(),
     }
-    setInvoices((prev) => [...prev, newInvoice])
+    persistInvoices([...invoices, newInvoice])
   }
 
   const updateInvoice = (id: string, updatedData: Partial<Invoice>) => {
-    setInvoices((prev) => prev.map((invoice) => (invoice.id === id ? { ...invoice, ...updatedData } : invoice)))
+    const updated = invoices.map((invoice) => (invoice.id === id ? { ...invoice, ...updatedData } : invoice))
+    persistInvoices(updated)
   }
 
   const getNextNumber = () => {
@@ -166,27 +185,41 @@ export default function InvoiceRegistration() {
   return (
     <div className={cn("p-6 space-y-6 bg-background text-foreground w-screen h-screen", theme === "system" ? systemTheme : theme)}>
       <div className="flex w-full justify-between items-center">
-        <h1 className="text-2xl font-bold">Invoice Registration</h1>
-        <Button
-          variant="outline"
-          onClick={() => {
-            if (theme === "system") {
-              setTheme("dark")
-            } else if (theme === "dark") {
-              setTheme("light")
-            } else {
-              setTheme("system")
-            }
-          }}
-        >
-          {theme === "system" ? <Laptop className="h-4 w-4" /> : (
-            theme === "dark" ? (
-              <Moon className="h-4 w-4" />
-            ) : (
-              <Sun className="h-4 w-4" />
-            )
-          )}
-        </Button>
+        <h1 className="text-2xl font-bold">
+          {workspaceFolder ? workspaceFolder.split(/[/\\]/).pop() : ""}
+        </h1>
+        <div className="flex gap-2 items-center">
+          <Button
+            variant="outline"
+            size={"icon"}
+            onClick={handleChangeWorkspace}
+            title="Change workspace folder"
+          >
+            <Folder className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size={"icon"}
+            onClick={() => {
+              if (theme === "system") {
+                setTheme("dark")
+              } else if (theme === "dark") {
+                setTheme("light")
+              } else {
+                setTheme("system")
+              }
+            }}
+            title="Change theme"
+          >
+            {theme === "system" ? <Laptop className="h-4 w-4" /> : (
+              theme === "dark" ? (
+                <Moon className="h-4 w-4" />
+              ) : (
+                <Sun className="h-4 w-4" />
+              )
+            )}
+          </Button>
+        </div>
       </div>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
@@ -234,13 +267,19 @@ export default function InvoiceRegistration() {
         </Button>
       </div>
 
-      <InvoiceTable
-        invoices={filteredAndSortedInvoices()}
-        onUpdateInvoice={updateInvoice}
-        sortColumn={sortColumn}
-        sortDirection={sortDirection}
-        onSort={handleSort}
-      />
+      {
+        loadingInvoices ? (
+          <div className="text-center text-gray-500">Loading invoices...</div>
+        ) : (
+          <InvoiceTable
+            invoices={filteredAndSortedInvoices()}
+            onUpdateInvoice={updateInvoice}
+            sortColumn={sortColumn}
+            sortDirection={sortDirection}
+            onSort={handleSort}
+          />
+        )
+      }
 
       <AddInvoiceDialog
         open={isDialogOpen}

@@ -2,13 +2,38 @@ import { app, BrowserWindow, ipcMain, nativeTheme } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import * as fs from 'fs'
+import { dialog } from 'electron'
+import { Invoice } from '@/App'
 // Theme config path for storing theme preference
-const themeConfigPath = path.join(app.getPath('userData'), 'theme-config.json')
+const configPath = path.join(app.getPath('userData'), 'config.json')
+// Helper to read config
+function readConfig() {
+  try {
+    if (fs.existsSync(configPath)) {
+      const data = fs.readFileSync(configPath, 'utf-8')
+      return JSON.parse(data)
+    }
+  } catch (error) {
+    console.error('Failed to read config:', error)
+  }
+  return {}
+}
+
+// Helper to write config
+function writeConfig(config: Record<string, unknown>) {
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(config), 'utf-8')
+    return true
+  } catch (error) {
+    console.error('Failed to write config:', error)
+    return false
+  }
+}
 
 ipcMain.handle('theme:get', async () => {
   try {
-    if (fs.existsSync(themeConfigPath)) {
-      const data = fs.readFileSync(themeConfigPath, 'utf-8')
+    if (fs.existsSync(configPath)) {
+      const data = fs.readFileSync(configPath, 'utf-8')
       const json = JSON.parse(data)
       if (json.theme === 'dark' || json.theme === 'light' || json.theme === 'system') {
         return json.theme
@@ -20,9 +45,39 @@ ipcMain.handle('theme:get', async () => {
   return 'system'
 })
 
+ipcMain.handle('workspace:get', async () => {
+  const config = readConfig()
+  return config.workspaceFolder || null
+})
+
+ipcMain.handle('workspace:set', async (_event, folder: string) => {
+  const config = readConfig()
+  config.workspaceFolder = folder
+  return writeConfig(config)
+})
+
+ipcMain.handle('workspace:pick', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory']
+  })
+  if (!result.canceled && result.filePaths.length > 0) {
+    const config = readConfig()
+    config.workspaceFolder = result.filePaths[0]
+    writeConfig(config)
+    return config.workspaceFolder
+  }
+  return null
+})
+
 ipcMain.handle('theme:set', async (_event, theme) => {
   try {
-    fs.writeFileSync(themeConfigPath, JSON.stringify({ theme }), 'utf-8')
+    let config: Record<string, unknown> = {}
+    if (fs.existsSync(configPath)) {
+      const data = fs.readFileSync(configPath, 'utf-8')
+      config = JSON.parse(data)
+    }
+    config.theme = theme
+    fs.writeFileSync(configPath, JSON.stringify(config), 'utf-8')
     return true
   } catch {
     return false
@@ -35,6 +90,42 @@ ipcMain.handle('theme:system', async () => {
     return systemTheme
   } catch {
     return 'light'
+  }
+})
+
+// Invoice storage handlers
+ipcMain.handle('invoices:read', async (_event, year: string, month: string) => {
+  const config = readConfig()
+  const workspaceFolder = config.workspaceFolder
+  if (!workspaceFolder) return []
+  const yearFolder = path.join(workspaceFolder, year)
+  const monthFile = path.join(yearFolder, `${month}.json`)
+  try {
+    if (fs.existsSync(monthFile)) {
+      const data = fs.readFileSync(monthFile, 'utf-8')
+      return JSON.parse(data)
+    }
+  } catch (error) {
+    console.error('Failed to read invoices:', error)
+  }
+  return []
+})
+
+ipcMain.handle('invoices:write', async (_event, year: string, month: string, invoices: Invoice[]) => {
+  const config = readConfig()
+  const workspaceFolder = config.workspaceFolder
+  if (!workspaceFolder) return false
+  const yearFolder = path.join(workspaceFolder, year)
+  const monthFile = path.join(yearFolder, `${month}.json`)
+  try {
+    if (!fs.existsSync(yearFolder)) {
+      fs.mkdirSync(yearFolder, { recursive: true })
+    }
+    fs.writeFileSync(monthFile, JSON.stringify(invoices, null, 2), 'utf-8')
+    return true
+  } catch (error) {
+    console.error('Failed to write invoices:', error)
+    return false
   }
 })
 
@@ -59,9 +150,32 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
+
 let win: BrowserWindow | null
 
-function createWindow() {
+
+async function ensureWorkspaceFolder() {
+  const config = readConfig()
+  if (!config.workspaceFolder) {
+    const result = await dialog.showOpenDialog({
+      title: 'Select Workspace Folder',
+      properties: ['openDirectory']
+    })
+    if (!result.canceled && result.filePaths.length > 0) {
+      config.workspaceFolder = result.filePaths[0]
+      writeConfig(config)
+    } else {
+      // User cancelled, quit app
+      app.quit()
+      return false
+    }
+  }
+  return true
+}
+
+async function createWindow() {
+  const hasWorkspace = await ensureWorkspaceFolder()
+  if (!hasWorkspace) return
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
@@ -77,7 +191,6 @@ function createWindow() {
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
   } else {
-    // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
 }

@@ -21,14 +21,30 @@ declare namespace NodeJS {
   }
 }
 
+interface Invoice {
+  id: string
+  number: string
+  atcud: string
+  nif: string
+  date: string
+  amount: number
+}
+
 // Used in Renderer process, expose in `preload.ts`
 interface Window {
   ipcRenderer: import('electron').IpcRenderer,
   theme: {
-    initialShouldUseDarkColors: boolean;
-    initialTheme: "system" | "dark" | "light";
-    getTheme?: () => Promise<"system" | "dark" | "light">;
-    setTheme?: (theme: "system" | "dark" | "light") => Promise<boolean>;
-    getSystemTheme?: () => Promise<"dark" | "light">;
+    getTheme: () => Promise<"system" | "dark" | "light">;
+    setTheme: (theme: "system" | "dark" | "light") => Promise<boolean>;
+    getSystemTheme: () => Promise<"dark" | "light">;
   };
+  workspace: {
+    getFolder: () => Promise<string | null>
+    setFolder: (folder: string) => Promise<boolean>
+    pickFolder: () => Promise<string | null>
+  };
+  invoices: {
+    read: (year: string, month: string) => Promise<Invoice[]>
+    write: (year: string, month: string, invoices: Invoice[]) => Promise<boolean>
+  }
 }
