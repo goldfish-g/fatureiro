@@ -46,5 +46,10 @@ interface Window {
   invoices: {
     read: (year: string, month: string) => Promise<Invoice[]>
     write: (year: string, month: string, invoices: Invoice[]) => Promise<boolean>
+  },
+  language: {
+    getLanguage: () => Promise<'en' | 'pt'>
+    setLanguage: (lang: 'en' | 'pt') => Promise<void>
+    getStrings: () => Promise<Record<string, string>>
   }
 }

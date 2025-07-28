@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useStrings } from "./lib/strings-context"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Laptop, Moon, Plus, Sun, Folder } from "lucide-react"
+import { Laptop, Moon, Plus, Sun, Folder, Languages } from "lucide-react"
 import { InvoiceTable } from "@/components/invoice-table"
 import { AddInvoiceDialog } from "@/components/add-invoice-dialog"
 import { Input } from "@/components/ui/input"
@@ -13,7 +14,7 @@ import { cn } from "./lib/utils"
 import { Tabs, TabsList, TabsTrigger } from "./components/ui/tabs"
 import { InvoiceSubmission } from "./components/invoice-submission"
 
-export default function InvoiceRegistration() {
+export function App() {
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
   const [selectedMonth, setSelectedMonth] = useState<string>((new Date().getMonth() + 1).toString())
   const [invoices, setInvoices] = useState<Invoice[]>([])
@@ -23,10 +24,10 @@ export default function InvoiceRegistration() {
   const [sortColumn, setSortColumn] = useState<keyof Invoice>("number")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [tab, setTab] = useState<"registration" | "submission">("registration")
-  // Persist theme using Electron's file system via preload API
   const [theme, setThemeState] = useState<"system" | "dark" | "light">("system")
   const [systemTheme, setSystemTheme] = useState<"dark" | "light">("light")
   const [workspaceFolder, setWorkspaceFolder] = useState<string | null>(null)
+  const { strings, language, setLanguage } = useStrings()
   useEffect(() => {
     const themeGetter = async () => {
       const initialTheme = await window.theme.getTheme?.()
@@ -62,21 +63,23 @@ export default function InvoiceRegistration() {
   }
 
 
+
+
   const currentYear = new Date().getFullYear()
   const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i)
   const months = [
-    { value: "1", label: "January" },
-    { value: "2", label: "February" },
-    { value: "3", label: "March" },
-    { value: "4", label: "April" },
-    { value: "5", label: "May" },
-    { value: "6", label: "June" },
-    { value: "7", label: "July" },
-    { value: "8", label: "August" },
-    { value: "9", label: "September" },
-    { value: "10", label: "October" },
-    { value: "11", label: "November" },
-    { value: "12", label: "December" },
+    { value: "1", label: strings["january"] || "January" },
+    { value: "2", label: strings["february"] || "February" },
+    { value: "3", label: strings["march"] || "March" },
+    { value: "4", label: strings["april"] || "April" },
+    { value: "5", label: strings["may"] || "May" },
+    { value: "6", label: strings["june"] || "June" },
+    { value: "7", label: strings["july"] || "July" },
+    { value: "8", label: strings["august"] || "August" },
+    { value: "9", label: strings["september"] || "September" },
+    { value: "10", label: strings["october"] || "October" },
+    { value: "11", label: strings["november"] || "November" },
+    { value: "12", label: strings["december"] || "December" },
   ]
 
   const persistInvoices = (newInvoices: Invoice[]) => {
@@ -199,10 +202,10 @@ export default function InvoiceRegistration() {
         <Tabs value={tab}>
           <TabsList>
             <TabsTrigger value="registration" onClick={() => setTab("registration")}>
-              Registration
+              {strings["registration"] || "Registration"}
             </TabsTrigger>
             <TabsTrigger value="submission" onClick={() => setTab("submission")}>
-              Submission
+              {strings["submission"] || "Submission"}
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -211,7 +214,7 @@ export default function InvoiceRegistration() {
             variant="outline"
             size={"icon"}
             onClick={handleChangeWorkspace}
-            title="Change workspace folder"
+            title={strings["select_workspace"] || "Select workspace folder"}
           >
             <Folder className="h-4 w-4" />
           </Button>
@@ -227,7 +230,7 @@ export default function InvoiceRegistration() {
                 setTheme("system")
               }
             }}
-            title="Change theme"
+            title={strings["change_theme"] || "Change theme"}
           >
             {theme === "system" ? <Laptop className="h-4 w-4" /> : (
               theme === "dark" ? (
@@ -237,6 +240,16 @@ export default function InvoiceRegistration() {
               )
             )}
           </Button>
+          <Select value={language} onValueChange={val => setLanguage(val as 'en' | 'pt')}>
+            <SelectTrigger className="w-24" title={strings["language"] || "Language"}>
+              <Languages className="h-4 w-4 mr-1 inline" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en">EN</SelectItem>
+              <SelectItem value="pt">PT</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <div className="flex items-center justify-between mb-6">
@@ -273,7 +286,7 @@ export default function InvoiceRegistration() {
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search invoices..."
+                placeholder={strings["search_invoices"] || "Search invoices..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -284,7 +297,7 @@ export default function InvoiceRegistration() {
         {tab === "registration" && (
           <Button onClick={() => setIsDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Invoice
+            {strings["add_invoice"] || "Add Invoice"}
           </Button>
         )}
       </div>

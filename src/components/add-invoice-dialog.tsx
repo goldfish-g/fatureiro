@@ -7,8 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plus } from "lucide-react"
-import type { Invoice } from "@/App"
 import { INVOICE_CONFIG } from "@/lib/config"
+import { useStrings } from "@/lib/strings-context"
 
 interface AddInvoiceDialogProps {
   open: boolean
@@ -39,6 +39,7 @@ export function AddInvoiceDialog({
 
   const [atcudPrefix, setAtcudPrefix] = useState<string>("ATCUD")
   const [numberPrefix, setNumberPrefix] = useState<string>(INVOICE_CONFIG.DEFAULT_NUMBER_PREFIX)
+  const { strings, language } = useStrings();
 
   const amountInputRef = useRef<HTMLInputElement>(null)
 
@@ -100,7 +101,7 @@ export function AddInvoiceDialog({
 
   const getWeekday = (year: number, month: number, day: number) => {
     const date = new Date(year, month - 1, day)
-    return date.toLocaleDateString("en-US", { weekday: "long" })
+    return date.toLocaleDateString(language, { weekday: "long" })
   }
 
   const incrementDay = () => {
@@ -199,12 +200,16 @@ export function AddInvoiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Invoice</DialogTitle>
+          <DialogTitle>
+            {strings["add_new_invoice"] || "Add New Invoice"}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="number">Number</Label>
+              <Label htmlFor="number">
+                {strings["invoice_number"] || "Invoice Number"}
+              </Label>
               <Input
                 id="number"
                 value={formData.number}
@@ -212,7 +217,7 @@ export function AddInvoiceDialog({
                 onKeyDown={handleKeyDown}
                 placeholder="PREFIX001"
               />
-              <p className="text-xs text-muted-foreground">Current prefix: {numberPrefix}</p>
+              <p className="text-xs text-muted-foreground">{strings["current_prefix"] || "Current prefix:"} {numberPrefix}</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="atcud">ATCUD</Label>
@@ -239,7 +244,9 @@ export function AddInvoiceDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="day">Day</Label>
+            <Label htmlFor="day">
+              {strings["day"] || "Day"}
+            </Label>
             <div className="flex items-center gap-2">
               <Input
                 id="day"
@@ -261,15 +268,17 @@ export function AddInvoiceDialog({
               </Button>
             </div>
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{getWeekday(selectedYear, selectedMonth, formData.day)}</span>
               <span>
-                {selectedYear}/{selectedMonth.toString().padStart(2, "0")}/{formData.day.toString().padStart(2, "0")}
+                {getWeekday(selectedYear, selectedMonth, formData.day)}
+              </span>
+              <span>
+                {new Date(selectedYear, selectedMonth - 1, formData.day).toLocaleDateString(language, { year: "numeric", month: "2-digit", day: "2-digit" })}
               </span>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount (€)</Label>
+            <Label htmlFor="amount">{strings["amount"] || "Montante"} (€)</Label>
             <Input
               ref={amountInputRef}
               id="amount"
@@ -285,10 +294,10 @@ export function AddInvoiceDialog({
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {strings["cancel"] || "Cancel"}
             </Button>
             <Button type="submit" disabled={!formData.amount || Number.parseFloat(formData.amount) <= 0}>
-              Add Invoice
+              {strings["add_invoice"] || "Add Invoice"}
             </Button>
           </div>
         </form>

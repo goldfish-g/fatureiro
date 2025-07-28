@@ -38,3 +38,9 @@ contextBridge.exposeInMainWorld('workspace', {
   setFolder: (folder: string) => ipcRenderer.invoke('workspace:set', folder),
   pickFolder: () => ipcRenderer.invoke('workspace:pick'),
 })
+
+contextBridge.exposeInMainWorld('language', {
+  getLanguage: () => ipcRenderer.invoke('language:get'),
+  setLanguage: (lang: 'en' | 'pt') => ipcRenderer.invoke('language:set', lang),
+  getStrings: () => ipcRenderer.invoke('language:strings'),
+})

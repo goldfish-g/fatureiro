@@ -5,6 +5,7 @@ import { Button } from "./ui/button"
 import { ChevronLeft, ChevronRight, MonitorPlay, Send, TextCursorInput } from "lucide-react"
 import { toast } from "sonner"
 import { Toggle } from "./ui/toggle"
+import { useStrings } from "@/lib/strings-context"
 
 
 export const InvoiceSubmission = ({
@@ -17,6 +18,7 @@ export const InvoiceSubmission = ({
   const [autoSubmission, setAutoSubmission] = useState(false);
   const autoSubmissionRef = useRef(false);
   const webviewRef = useRef<Electron.WebviewTag>(null);
+  const { strings } = useStrings();
 
   const submitInvoice = async () => {
     if (webviewRef?.current) {
@@ -24,12 +26,12 @@ export const InvoiceSubmission = ({
       await new Promise(r => setTimeout(r, 500));
       const alert = await webviewRef.current.executeJavaScript('document.getElementsByClassName("alert alert-error")') as HTMLElement[];
       if (alert.length > 0) {
-        toast.error("Erro ao submeter a fatura. Verifique os dados preenchidos.");
+        toast.error(strings["invoice_submission_error"] || "Error submitting invoice: " + alert[0].innerText);
         autoSubmissionRef.current = false;
         setAutoSubmission(false);
       } else {
         if (!autoSubmissionRef.current) {
-          toast.success("Fatura submetida com sucesso!");
+          toast.success(strings["invoice_submission_success"] || "Invoice submitted successfully!");
         } else if (currentInvoiceRef.current < invoices.length - 1) {
           const next = currentInvoiceRef.current + 1;
           currentInvoiceRef.current = next;
@@ -37,13 +39,13 @@ export const InvoiceSubmission = ({
           await new Promise(r => setTimeout(r, 500));
           await injectInvoice(invoices[next]);
         } else {
-          toast.success("Todas as faturas foram submetidas com sucesso!");
+          toast.success(strings["all_invoices_submitted_successfully"] || "All invoices submitted successfully!");
           autoSubmissionRef.current = false;
           setAutoSubmission(false);
         }
       }
     } else {
-      console.error("Webview not available");
+      toast.error(strings["webview_not_available"] || "Webview not available for invoice submission.");
     }
   };
 
@@ -72,7 +74,7 @@ export const InvoiceSubmission = ({
         await submitInvoice();
       }
     } else {
-      console.error("Webview not available");
+      toast.error(strings["webview_not_available"] || "Webview not available for invoice injection.");
     }
   };
 
@@ -107,7 +109,9 @@ export const InvoiceSubmission = ({
           <div
             className="flex items-center gap-1"
           >
-            <span>Invoice</span>
+            <span>
+              {strings["invoice"] || "Invoice"}:
+            </span>
             <Input
               type="number"
               min={1}
@@ -122,7 +126,7 @@ export const InvoiceSubmission = ({
               }}
               className="input w-16 text-center"
             />
-            <span>of {invoices.length}</span>
+            <span>{strings["of"] || "of"} {invoices.length}</span>
           </div>
           <Button
             onClick={() => {
@@ -152,21 +156,21 @@ export const InvoiceSubmission = ({
             className={autoSubmission ? "!bg-foreground/30 hover:!bg-foreground/40" : ""}
           >
             <MonitorPlay />
-            Auto Submeter
+            {strings["auto_submit"] || "Auto Submit"}
           </Toggle>
           <Button
             variant="outline"
             onClick={() => injectInvoice(invoices[currentInvoice])}
           >
             <TextCursorInput />
-            Preencher
+            {strings["fill_in"] || "Fill In"}
           </Button>
           <Button
             variant="outline"
             onClick={() => submitInvoice()}
           >
             <Send />
-            Submeter
+            {strings["submit"] || "Submit"}
           </Button>
         </div>
       </div>

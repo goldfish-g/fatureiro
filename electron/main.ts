@@ -4,6 +4,8 @@ import path from 'node:path'
 import * as fs from 'fs'
 import { dialog } from 'electron'
 import { Invoice } from '@/App'
+// Supported languages
+const SUPPORTED_LANGUAGES = ['en', 'pt']
 // Theme config path for storing theme preference
 const configPath = path.join(app.getPath('userData'), 'config.json')
 // Helper to read config
@@ -28,6 +30,13 @@ function writeConfig(config: Record<string, unknown>) {
     console.error('Failed to write config:', error)
     return false
   }
+}
+
+// Helper to get system language (returns 'en' or 'pt', defaults to 'en')
+function getSystemLanguage() {
+  const locale = app.getLocale ? app.getLocale() : 'en'
+  const lang = locale.split('-')[0].toLowerCase()
+  return SUPPORTED_LANGUAGES.includes(lang) ? lang : 'en'
 }
 
 ipcMain.handle('theme:get', async () => {
@@ -93,6 +102,44 @@ ipcMain.handle('theme:system', async () => {
   }
 })
 
+// Language handlers
+ipcMain.handle('language:get', async () => {
+  const config = readConfig()
+  let lang = config.language
+  if (!lang || !SUPPORTED_LANGUAGES.includes(lang)) {
+    lang = getSystemLanguage()
+  }
+  return lang
+})
+
+ipcMain.handle('language:set', async (_event, language: string) => {
+  if (!SUPPORTED_LANGUAGES.includes(language)) return false
+  const config = readConfig()
+  config.language = language
+  return writeConfig(config)
+})
+
+// Load language strings from assets
+ipcMain.handle('language:strings', async () => {
+  const config = readConfig()
+  let lang = config.language
+  if (!lang || !SUPPORTED_LANGUAGES.includes(lang)) {
+    lang = getSystemLanguage()
+  }
+  // Path to assets folder (in src/assets)
+  const assetsPath = path.join(process.env.APP_ROOT, 'src', 'assets')
+  const langFile = path.join(assetsPath, `${lang}.json`)
+  try {
+    if (fs.existsSync(langFile)) {
+      const data = fs.readFileSync(langFile, 'utf-8')
+      return JSON.parse(data)
+    }
+  } catch (error) {
+    console.error('Failed to load language file:', error)
+  }
+  return {}
+})
+
 // Invoice storage handlers
 ipcMain.handle('invoices:read', async (_event, year: string, month: string) => {
   const config = readConfig()
@@ -142,6 +189,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // │ │ └── preload.mjs
 // │
 process.env.APP_ROOT = path.join(__dirname, '..')
+
 
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
