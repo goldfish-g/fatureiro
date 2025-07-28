@@ -1,4 +1,4 @@
-import { ipcRenderer, contextBridge, nativeTheme } from 'electron'
+import { ipcRenderer, contextBridge } from 'electron'
 
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('ipcRenderer', {
@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
 })
 
 contextBridge.exposeInMainWorld('theme', {
-  initialShouldUseDarkColors: nativeTheme.shouldUseDarkColors,
-  initialTheme: nativeTheme.themeSource,
+  getTheme: () => ipcRenderer.invoke('theme:get'),
+  setTheme: (theme: "system" | "dark" | "light") => ipcRenderer.invoke('theme:set', theme),
+  getSystemTheme: () => ipcRenderer.invoke('theme:system'),
 })

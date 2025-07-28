@@ -27,5 +27,8 @@ interface Window {
   theme: {
     initialShouldUseDarkColors: boolean;
     initialTheme: "system" | "dark" | "light";
+    getTheme?: () => Promise<"system" | "dark" | "light">;
+    setTheme?: (theme: "system" | "dark" | "light") => Promise<boolean>;
+    getSystemTheme?: () => Promise<"dark" | "light">;
   };
 }

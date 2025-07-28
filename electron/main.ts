@@ -1,7 +1,42 @@
-import { app, BrowserWindow } from 'electron'
-// import { createRequire } from 'node:module'
+import { app, BrowserWindow, ipcMain, nativeTheme } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import * as fs from 'fs'
+// Theme config path for storing theme preference
+const themeConfigPath = path.join(app.getPath('userData'), 'theme-config.json')
+
+ipcMain.handle('theme:get', async () => {
+  try {
+    if (fs.existsSync(themeConfigPath)) {
+      const data = fs.readFileSync(themeConfigPath, 'utf-8')
+      const json = JSON.parse(data)
+      if (json.theme === 'dark' || json.theme === 'light' || json.theme === 'system') {
+        return json.theme
+      }
+    }
+  } catch (error) {
+    console.error('Failed to read theme config:', error)
+  }
+  return 'system'
+})
+
+ipcMain.handle('theme:set', async (_event, theme) => {
+  try {
+    fs.writeFileSync(themeConfigPath, JSON.stringify({ theme }), 'utf-8')
+    return true
+  } catch {
+    return false
+  }
+})
+
+ipcMain.handle('theme:system', async () => {
+  try {
+    const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
+    return systemTheme
+  } catch {
+    return 'light'
+  }
+})
 
 // const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))

@@ -28,22 +28,23 @@ export default function InvoiceRegistration() {
   const [searchTerm, setSearchTerm] = useState("")
   const [sortColumn, setSortColumn] = useState<keyof Invoice>("number")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const [theme, setTheme] = useState<("system" | "dark" | "light")>((() => {
-    if (typeof window !== "undefined" && window.theme && window.theme.initialTheme) {
-      return window.theme.initialTheme
-    }
-    return "system"
-  })())
-  const [shouldUseDarkColors] = useState((() => {
-    if (typeof window !== "undefined" && window.theme && typeof window.theme.initialShouldUseDarkColors === 'boolean') {
-      return window.theme.initialShouldUseDarkColors
-    }
-    return false
-  })())
-
+  // Persist theme using Electron's file system via preload API
+  const [theme, setThemeState] = useState<"system" | "dark" | "light">("system")
+  const [systemTheme, setSystemTheme] = useState<"dark" | "light">("light")
   useEffect(() => {
-    console.log({theme, shouldUseDarkColors})
-  }, [theme, shouldUseDarkColors])
+    const themeGetter = async () => {
+      const initialTheme = await window.theme.getTheme?.()
+      const initialSystemTheme = await window.theme.getSystemTheme?.()
+      setThemeState(initialTheme || "system")
+      setSystemTheme(initialSystemTheme || "light")
+    }
+    themeGetter()
+  }, [])
+  const setTheme = async (newTheme: "system" | "dark" | "light") => {
+    setThemeState(newTheme)
+    await window.theme.setTheme?.(newTheme)
+  }
+
 
   const currentYear = new Date().getFullYear()
   const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i)
@@ -163,7 +164,7 @@ export default function InvoiceRegistration() {
   }
 
   return (
-    <div className={cn("p-6 space-y-6 bg-background text-foreground w-screen h-screen", theme === "system" ? (shouldUseDarkColors ? "dark" : "light") : theme)}>
+    <div className={cn("p-6 space-y-6 bg-background text-foreground w-screen h-screen", theme === "system" ? systemTheme : theme)}>
       <div className="flex w-full justify-between items-center">
         <h1 className="text-2xl font-bold">Invoice Registration</h1>
         <Button
