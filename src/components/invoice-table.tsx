@@ -6,12 +6,15 @@ import { useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Check, X, Edit } from "lucide-react"
+import { Check, X, Edit, Trash2 } from "lucide-react"
 import { ChevronUp, ChevronDown } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog"
 
 interface InvoiceTableProps {
   invoices: Invoice[]
   onUpdateInvoice: (id: string, updatedInvoice: Partial<Invoice>) => void
+  onDeleteInvoice: (id: string) => void;
   sortColumn: keyof Invoice
   sortDirection: "asc" | "desc"
   onSort: (column: keyof Invoice) => void
@@ -23,16 +26,18 @@ const SortableHeader = ({
   sortColumn,
   sortDirection,
   onSort,
+  className
 }: {
   column: keyof Invoice
   children: React.ReactNode
   sortColumn: keyof Invoice
   sortDirection: "asc" | "desc"
   onSort: (column: keyof Invoice) => void
+  className?: string
 }) => {
   const isActive = sortColumn === column
   return (
-    <TableHead className="cursor-pointer hover:bg-gray-50 select-none" onClick={() => onSort(column)}>
+    <TableHead className={cn("cursor-pointer hover:bg-gray-50 select-none", className)} onClick={() => onSort(column)}>
       <div className="flex items-center gap-1">
         {children}
         {isActive &&
@@ -42,7 +47,7 @@ const SortableHeader = ({
   )
 }
 
-export function InvoiceTable({ invoices, onUpdateInvoice, sortColumn, sortDirection, onSort }: InvoiceTableProps) {
+export function InvoiceTable({ invoices, onUpdateInvoice, onDeleteInvoice, sortColumn, sortDirection, onSort }: InvoiceTableProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingData, setEditingData] = useState<Partial<Invoice>>({})
 
@@ -100,10 +105,14 @@ export function InvoiceTable({ invoices, onUpdateInvoice, sortColumn, sortDirect
             <SortableHeader column="date" sortColumn={sortColumn} sortDirection={sortDirection} onSort={onSort}>
               Date
             </SortableHeader>
-            <SortableHeader column="amount" sortColumn={sortColumn} sortDirection={sortDirection} onSort={onSort}>
-              Amount
+            <SortableHeader className="w-24" column="amount" sortColumn={sortColumn} sortDirection={sortDirection} onSort={onSort}>
+              <div className="w-full text-right">
+                Amount
+              </div>
             </SortableHeader>
-            <TableHead className="w-20">Actions</TableHead>
+            <TableHead className="w-20">
+              <div className="w-full text-center">Actions</div>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -182,20 +191,45 @@ export function InvoiceTable({ invoices, onUpdateInvoice, sortColumn, sortDirect
                     formatCurrency(invoice.amount)
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="flex justify-center">
                   {editingId === invoice.id ? (
                     <div className="flex gap-1">
-                      <Button size="sm" variant="ghost" onClick={saveEditing}>
+                      <Button size="icon" variant="ghost" onClick={saveEditing}>
                         <Check className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={cancelEditing}>
+                      <Button size="icon" variant="ghost" onClick={cancelEditing}>
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
                   ) : (
-                    <Button size="sm" variant="ghost" onClick={() => startEditing(invoice)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    <>
+                      <Button size="icon" variant="ghost" onClick={() => startEditing(invoice)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="icon" variant="ghost">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure you wish to delete this invoice?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => onDeleteInvoice(invoice.id)}
+                            >
+                              Delete
+                              </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
                   )}
                 </TableCell>
               </TableRow>

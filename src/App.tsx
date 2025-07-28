@@ -94,6 +94,11 @@ export default function InvoiceRegistration() {
     persistInvoices(updated)
   }
 
+  const deleteInvoice = (id: string) => {
+    const updated = invoices.filter((invoice) => invoice.id !== id)
+    persistInvoices(updated)
+  }
+
   const getNextNumber = () => {
     if (invoices.length === 0)
       return `${INVOICE_CONFIG.DEFAULT_NUMBER_PREFIX}${"1".padStart(INVOICE_CONFIG.NUMBER_LEADING_ZEROS, "0")}`
@@ -274,6 +279,7 @@ export default function InvoiceRegistration() {
           <InvoiceTable
             invoices={filteredAndSortedInvoices()}
             onUpdateInvoice={updateInvoice}
+            onDeleteInvoice={deleteInvoice}
             sortColumn={sortColumn}
             sortDirection={sortDirection}
             onSort={handleSort}
