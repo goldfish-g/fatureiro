@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useStrings } from "./lib/strings-context"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Laptop, Moon, Plus, Sun, Folder, Languages } from "lucide-react"
+import { Laptop, Moon, Plus, Sun, Folder, Languages, X, MinusIcon, MaximizeIcon } from "lucide-react"
 import { InvoiceTable } from "@/components/invoice-table"
 import { AddInvoiceDialog } from "@/components/add-invoice-dialog"
 import { Input } from "@/components/ui/input"
@@ -194,151 +194,188 @@ export function App() {
   }
 
   return (
-    <div className={cn("p-6 space-y-6 bg-background text-foreground w-screen h-screen flex flex-col", theme === "system" ? systemTheme : theme)}>
-      <div className="flex w-full justify-between items-center">
-        <h1 className="text-2xl font-bold">
-          {workspaceFolder ? workspaceFolder.split(/[/\\]/).pop() : ""}
-        </h1>
-        <Tabs value={tab}>
-          <TabsList>
-            <TabsTrigger value="registration" onClick={() => setTab("registration")}>
-              {strings["registration"] || "Registration"}
-            </TabsTrigger>
-            <TabsTrigger value="submission" onClick={() => setTab("submission")}>
-              {strings["submission"] || "Submission"}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <div className="flex gap-2 items-center">
-          <Button
-            variant="outline"
-            size={"icon"}
-            onClick={handleChangeWorkspace}
-            title={strings["select_workspace"] || "Select workspace folder"}
+    <div className={cn("bg-background/5 dark:bg-background/30 glass rounded-2xl text-foreground w-screen h-screen flex flex-col relative", theme === "system" ? systemTheme : theme)}>
+      <div
+        className="absolute top-0 left-0 w-screen h-screen backdrop-blur-3xl rounded-2xl dark:bg-background/30 bg-background/5"
+      >
+        <div className="flex w-full justify-between items-center p-2 bg-gradient-to-b from-background/30 to-transparent via-transparent rounded-t-2xl">
+          <h1
+            className="text-lg w-full pl-3 titlebar"
+            id="titlebar"
           >
-            <Folder className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
+            Fatureiro
+          </h1>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => window.app.minimizeApp()}
+              variant={"ghost"}
+              size={"icon"}
+            >
+              <MinusIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={() => window.app.maximizeApp()}
+              variant={"ghost"}
+              size={"icon"}
+            >
+              <MaximizeIcon className="h-4 w-4" />
+            </Button>
+            <Button
+            onClick={() => window.app.closeApp()}
+            variant={"ghost"}
             size={"icon"}
-            onClick={() => {
-              if (theme === "system") {
-                setTheme("dark")
-              } else if (theme === "dark") {
-                setTheme("light")
-              } else {
-                setTheme("system")
-              }
-            }}
-            title={strings["change_theme"] || "Change theme"}
           >
-            {theme === "system" ? <Laptop className="h-4 w-4" /> : (
-              theme === "dark" ? (
-                <Moon className="h-4 w-4" />
-              ) : (
-                <Sun className="h-4 w-4" />
-              )
-            )}
+            <X className="h-4 w-4" />
           </Button>
-          <Select value={language} onValueChange={val => setLanguage(val as 'en' | 'pt')}>
-            <SelectTrigger className="w-24" title={strings["language"] || "Language"}>
-              <Languages className="h-4 w-4 mr-1 inline" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="en">EN</SelectItem>
-              <SelectItem value="pt">PT</SelectItem>
-            </SelectContent>
-          </Select>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger id="year" className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map((year) => (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger id="month" className="w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value}>
-                    {month.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {tab === "registration" && (
-            <div className="relative w-full max-w-sm">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder={strings["search_invoices"] || "Search invoices..."}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+        <div style={{height: 'calc(100% - 2rem)'}} className="p-6 flex flex-col w-screen absolute top-8 left-0">
+          <div className="flex w-full justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">
+              {workspaceFolder ? workspaceFolder.split(/[/\\]/).pop() : ""}
+            </h1>
+            <Tabs value={tab}>
+              <TabsList>
+                <TabsTrigger value="registration" onClick={() => setTab("registration")}>
+                  {strings["registration"] || "Registration"}
+                </TabsTrigger>
+                <TabsTrigger value="submission" onClick={() => setTab("submission")}>
+                  {strings["submission"] || "Submission"}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="flex gap-2 items-center">
+              <Button
+                variant="outline"
+                size={"icon"}
+                onClick={handleChangeWorkspace}
+                title={strings["select_workspace"] || "Select workspace folder"}
+              >
+                <Folder className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size={"icon"}
+                onClick={() => {
+                  if (theme === "system") {
+                    setTheme("dark")
+                  } else if (theme === "dark") {
+                    setTheme("light")
+                  } else {
+                    setTheme("system")
+                  }
+                }}
+                title={strings["change_theme"] || "Change theme"}
+              >
+                {theme === "system" ? <Laptop className="h-4 w-4" /> : (
+                  theme === "dark" ? (
+                    <Moon className="h-4 w-4" />
+                  ) : (
+                    <Sun className="h-4 w-4" />
+                  )
+                )}
+              </Button>
+              <Select value={language} onValueChange={val => setLanguage(val as 'en' | 'pt')}>
+                <SelectTrigger className="w-24" title={strings["language"] || "Language"}>
+                  <Languages className="h-4 w-4 mr-1 inline" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">EN</SelectItem>
+                  <SelectItem value="pt">PT</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          )}
-        </div>
+          </div>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger id="year" className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger id="month" className="w-36">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map((month) => (
+                      <SelectItem key={month.value} value={month.value}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {tab === "registration" && (
+                <div className="relative w-full max-w-sm">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder={strings["search_invoices"] || "Search invoices..."}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              )}
+            </div>
 
-        <div
-          className="hidden lg:flex items-center gap-4 border-border border-[1px] rounded-md px-3 py-1.5 shadow-xs"
-        >
-          <div>
-            Total mensal:
-          </div>
-          <div
-            className="font-bold"
-          >
-            {filteredAndSortedInvoices().reduce((acc, invoice) => acc + invoice.amount, 0).toFixed(2)} €
-          </div>
-          <div
-            className="text-xs"
-          >
-            ({filteredAndSortedInvoices().length} faturas)
-          </div>
-        </div>
+            <div
+              className="hidden lg:flex items-center gap-4 border-border border-[1px] rounded-md px-3 py-1.5 shadow-xs"
+            >
+              <div>
+                Total mensal:
+              </div>
+              <div
+                className="font-bold"
+              >
+                {filteredAndSortedInvoices().reduce((acc, invoice) => acc + invoice.amount, 0).toFixed(2)} €
+              </div>
+              <div
+                className="text-xs"
+              >
+                ({filteredAndSortedInvoices().length} faturas)
+              </div>
+            </div>
 
-        {tab === "registration" ? (
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            {strings["add_invoice"] || "Add Invoice"}
-          </Button>
-        ) : <div />}
+            {tab === "registration" ? (
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                {strings["add_invoice"] || "Add Invoice"}
+              </Button>
+            ) : <div />}
+          </div>
+
+          {tab === "registration" ? (
+
+            loadingInvoices ? (
+              <div className="text-center text-gray-500">Loading invoices...</div>
+            ) : (
+              <InvoiceTable
+                invoices={filteredAndSortedInvoices()}
+                onUpdateInvoice={updateInvoice}
+                onDeleteInvoice={deleteInvoice}
+                sortColumn={sortColumn}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+              />
+            )
+          ) : (
+            <InvoiceSubmission invoices={filteredAndSortedInvoices()} />
+          )
+          }
+        </div>
       </div>
-
-      {tab === "registration" ? (
-
-        loadingInvoices ? (
-          <div className="text-center text-gray-500">Loading invoices...</div>
-        ) : (
-          <InvoiceTable
-            invoices={filteredAndSortedInvoices()}
-            onUpdateInvoice={updateInvoice}
-            onDeleteInvoice={deleteInvoice}
-            sortColumn={sortColumn}
-            sortDirection={sortDirection}
-            onSort={handleSort}
-          />
-        )
-      ) : (
-        <InvoiceSubmission invoices={filteredAndSortedInvoices()} />
-      )
-      }
 
       <AddInvoiceDialog
         open={isDialogOpen}

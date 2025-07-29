@@ -44,3 +44,9 @@ contextBridge.exposeInMainWorld('language', {
   setLanguage: (lang: 'en' | 'pt') => ipcRenderer.invoke('language:set', lang),
   getStrings: () => ipcRenderer.invoke('language:strings'),
 })
+
+contextBridge.exposeInMainWorld('app', {
+  closeApp: () => ipcRenderer.invoke('app:close'),
+  minimizeApp: () => ipcRenderer.send('app:minimize'),
+  maximizeApp: () => ipcRenderer.send('app:maximize'),
+})

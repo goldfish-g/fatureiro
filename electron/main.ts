@@ -175,6 +175,31 @@ ipcMain.handle('invoices:write', async (_event, year: string, month: string, inv
   }
 })
 
+ipcMain.handle('app:close', () => {
+  app.quit()
+})
+ipcMain.on('app:minimize', () => {
+  const focusedWindow = BrowserWindow.getFocusedWindow()
+  if (focusedWindow) {
+    focusedWindow.minimize()
+  }
+})
+
+let previousSize: { width: number, height: number } | null = null
+ipcMain.on('app:maximize', () => {
+  const focusedWindow = BrowserWindow.getFocusedWindow()
+  if (focusedWindow) {
+    if (previousSize) {
+      focusedWindow.setSize(previousSize.width, previousSize.height)
+      previousSize = null
+    } else {
+      const currentSize = focusedWindow.getSize()
+      previousSize = { width: currentSize[0], height: currentSize[1] }
+      focusedWindow.maximize()
+    }
+  }
+})
+
 // const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -229,6 +254,8 @@ async function createWindow() {
       preload: path.join(__dirname, 'preload.mjs'),
       webviewTag: true,
     },
+    transparent: true,
+    titleBarStyle: 'hidden',
   })
   win.setMenuBarVisibility(false)
 

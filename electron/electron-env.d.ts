@@ -51,5 +51,10 @@ interface Window {
     getLanguage: () => Promise<'en' | 'pt'>
     setLanguage: (lang: 'en' | 'pt') => Promise<void>
     getStrings: () => Promise<Record<string, string>>
+  },
+  app: {
+    closeApp: () => Promise<void>
+    minimizeApp: () => Promise<void>
+    maximizeApp: () => Promise<void>
   }
 }

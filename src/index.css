@@ -1,7 +1,19 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "daisyui";
+
+.titlebar {
+  app-region: drag;
+}
 
 @custom-variant dark (&:is(.dark *));
+
+body {
+  @apply !bg-transparent;
+}
+html {
+  @apply !bg-transparent;
+}
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);

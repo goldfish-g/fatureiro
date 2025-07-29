@@ -121,7 +121,7 @@ export function InvoiceTable({ invoices, onUpdateInvoice, onDeleteInvoice, sortC
     <div className="border rounded-lg flex-1 overflow-hidden">
       <div className="h-full overflow-y-auto" ref={scrollContainerRef} tabIndex={-1}>
         <Table className="min-w-full">
-          <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
+          <TableHeader className="sticky top-0 z-10 bg-background/10 backdrop-blur-3xl shadow-sm">
             <TableRow>
               <SortableHeader column="number" sortColumn={sortColumn} sortDirection={sortDirection} onSort={onSort}>
                 Number
