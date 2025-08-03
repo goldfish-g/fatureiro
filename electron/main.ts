@@ -126,7 +126,7 @@ ipcMain.handle('language:strings', async () => {
     lang = getSystemLanguage()
   }
   // Path to assets folder (in src/assets)
-  const assetsPath = path.join(process.env.APP_ROOT, 'src', 'assets')
+  const assetsPath = path.join(process.env.VITE_PUBLIC, 'langs')
   const langFile = path.join(assetsPath, `${lang}.json`)
   try {
     if (fs.existsSync(langFile)) {
