@@ -348,6 +348,7 @@ export function App() {
         nextAtcud={getNextAtcud()}
         selectedYear={Number.parseInt(selectedYear)}
         selectedMonth={Number.parseInt(selectedMonth)}
+        theme={theme === "system" ? systemTheme : theme}
       />
     </div>
   )

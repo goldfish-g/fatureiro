@@ -37,7 +37,7 @@ const SortableHeader = ({
 }) => {
   const isActive = sortColumn === column
   return (
-    <TableHead className={cn("cursor-pointer hover:bg-gray-50 select-none", className)} onClick={() => onSort(column)}>
+    <TableHead className={cn("cursor-pointer hover:bg-foreground/40 select-none", className)} onClick={() => onSort(column)}>
       <div className="flex items-center gap-1">
         {children}
         {isActive &&

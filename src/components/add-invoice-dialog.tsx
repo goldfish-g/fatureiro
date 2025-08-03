@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Plus } from "lucide-react"
 import { INVOICE_CONFIG } from "@/lib/config"
 import { useStrings } from "@/lib/strings-context"
+import { cn } from "@/lib/utils"
 
 interface AddInvoiceDialogProps {
   open: boolean
@@ -18,6 +19,7 @@ interface AddInvoiceDialogProps {
   nextAtcud: string
   selectedYear: number
   selectedMonth: number
+  theme: "dark"|"light"
 }
 
 export function AddInvoiceDialog({
@@ -28,6 +30,7 @@ export function AddInvoiceDialog({
   nextAtcud,
   selectedYear,
   selectedMonth,
+  theme
 }: AddInvoiceDialogProps) {
   const [formData, setFormData] = useState({
     number: nextNumber,
@@ -52,7 +55,7 @@ export function AddInvoiceDialog({
 
   // Construct full date from year, month, and day
   const getFullDate = (year: number, month: number, day: number) => {
-    const date = new Date(year, month - 1, day)
+    const date = new Date(year, month - 1, day, 9)
     return date.toISOString().split("T")[0]
   }
 
@@ -198,7 +201,7 @@ export function AddInvoiceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={cn("sm:max-w-md text-foreground", theme)}>
         <DialogHeader>
           <DialogTitle>
             {strings["add_new_invoice"] || "Add New Invoice"}
