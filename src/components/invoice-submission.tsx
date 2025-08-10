@@ -52,7 +52,7 @@ export const InvoiceSubmission = ({
   const injectInvoice = async (invoice: Invoice) => {
     if (webviewRef?.current) {
       await webviewRef.current.executeJavaScript(`
-        document.getElementById("nifAdquirente").value = "${invoice.nif ?? "999999990"}";
+        document.getElementById("nifAdquirente").value = "${(!invoice.nif || invoice.nif.trim() === "") ? "999999990" : invoice.nif}";
         document.getElementById("atcud").value = "${invoice.atcud}";
         document.getElementById("tipoDocumento").value = "FS";
         document.getElementById("numeroDocumento").value = "${invoice.number}";
