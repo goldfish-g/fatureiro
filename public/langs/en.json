@@ -17,7 +17,7 @@
   "october": "October",
   "november": "November",
   "december": "December",
-  "invoice_submission_error": "Error submitting invoice. Please check the entered data.",
+  "invoice_submission_error": "Error submitting invoice",
   "invoice_submission_success": "Invoice submitted successfully.",
   "all_invoices_submitted_successfully": "All invoices submitted successfully.",
   "webview_not_available": "Webview not available for invoice submission.",

@@ -7,4 +7,4 @@ export const INVOICE_CONFIG = {
   // Default prefixes
   DEFAULT_ATCUD_PREFIX: "JF4SD8WV-",
   DEFAULT_NUMBER_PREFIX: "A/",
-} as const
+} as const;

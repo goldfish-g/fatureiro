@@ -17,7 +17,7 @@
   "october": "Outubro",
   "november": "Novembro",
   "december": "Dezembro",
-  "invoice_submission_error": "Erro ao submeter a fatura. Verifique os dados preenchidos.",
+  "invoice_submission_error": "Erro ao submeter a fatura",
   "invoice_submission_success": "Fatura submetida com sucesso.",
   "all_invoices_submitted_successfully": "Todas as faturas submetidas com sucesso.",
   "webview_not_available": "Webview não disponível para submissão de fatura.",

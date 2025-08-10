@@ -1,17 +1,17 @@
-import { createContext, useContext } from "react"
+import { createContext, useContext } from "react";
 
 export type StringsContextType = {
-  strings: Record<string, string>
-  language: 'en' | 'pt'
-  setLanguage: (lang: 'en' | 'pt') => void
-}
+  strings: Record<string, string>;
+  language: "en" | "pt";
+  setLanguage: (lang: "en" | "pt") => void;
+};
 
 export const StringsContext = createContext<StringsContextType>({
   strings: {},
-  language: 'en',
+  language: "en",
   setLanguage: () => {},
-})
+});
 
 export function useStrings() {
-  return useContext(StringsContext)
+  return useContext(StringsContext);
 }

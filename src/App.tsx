@@ -1,72 +1,81 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useStrings } from "./lib/strings-context"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Laptop, Moon, Plus, Sun, Folder, Languages } from "lucide-react"
-import { InvoiceTable } from "@/components/invoice-table"
-import { AddInvoiceDialog } from "@/components/add-invoice-dialog"
-import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
-import { INVOICE_CONFIG } from "@/lib/config"
-import { cn } from "./lib/utils"
-import { Tabs, TabsList, TabsTrigger } from "./components/ui/tabs"
-import { InvoiceSubmission } from "./components/invoice-submission"
+import { useEffect, useState } from "react";
+import { useStrings } from "./lib/strings-context";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Laptop, Moon, Plus, Sun, Folder, Languages } from "lucide-react";
+import { InvoiceTable } from "@/components/invoice-table";
+import { AddInvoiceDialog } from "@/components/add-invoice-dialog";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import { INVOICE_CONFIG } from "@/lib/config";
+import { cn } from "./lib/utils";
+import { Tabs, TabsList, TabsTrigger } from "./components/ui/tabs";
+import { InvoiceSubmission } from "./components/invoice-submission";
 
 export function App() {
-  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
-  const [selectedMonth, setSelectedMonth] = useState<string>((new Date().getMonth() + 1).toString())
-  const [invoices, setInvoices] = useState<Invoice[]>([])
-  const [loadingInvoices, setLoadingInvoices] = useState(false)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [sortColumn, setSortColumn] = useState<keyof Invoice>("number")
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const [tab, setTab] = useState<"registration" | "submission">("registration")
-  const [theme, setThemeState] = useState<"system" | "dark" | "light">("system")
-  const [systemTheme, setSystemTheme] = useState<"dark" | "light">("light")
-  const [workspaceFolder, setWorkspaceFolder] = useState<string | null>(null)
-  const { strings, language, setLanguage } = useStrings()
+  const [selectedYear, setSelectedYear] = useState<string>(
+    new Date().getFullYear().toString()
+  );
+  const [selectedMonth, setSelectedMonth] = useState<string>(
+    (new Date().getMonth() + 1).toString()
+  );
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortColumn, setSortColumn] = useState<keyof Invoice>("number");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [tab, setTab] = useState<"registration" | "submission">("registration");
+  const [theme, setThemeState] = useState<"system" | "dark" | "light">(
+    "system"
+  );
+  const [systemTheme, setSystemTheme] = useState<"dark" | "light">("light");
+  const [workspaceFolder, setWorkspaceFolder] = useState<string | null>(null);
+  const { strings, language, setLanguage } = useStrings();
   useEffect(() => {
     const themeGetter = async () => {
-      const initialTheme = await window.theme.getTheme?.()
-      const initialSystemTheme = await window.theme.getSystemTheme?.()
-      setThemeState(initialTheme || "system")
-      setSystemTheme(initialSystemTheme || "light")
-    }
+      const initialTheme = await window.theme.getTheme?.();
+      const initialSystemTheme = await window.theme.getSystemTheme?.();
+      setThemeState(initialTheme || "system");
+      setSystemTheme(initialSystemTheme || "light");
+    };
     const fetchWorkspace = async () => {
-      const folder = await window.workspace.getFolder?.()
-      setWorkspaceFolder(folder)
-    }
-    themeGetter()
-    fetchWorkspace()
-  }, [])
+      const folder = await window.workspace.getFolder?.();
+      setWorkspaceFolder(folder);
+    };
+    themeGetter();
+    fetchWorkspace();
+  }, []);
 
   // Load invoices when year/month or workspaceFolder changes
   useEffect(() => {
-    if (!workspaceFolder) return
-    setLoadingInvoices(true)
+    if (!workspaceFolder) return;
+    setLoadingInvoices(true);
     window.invoices.read(selectedYear, selectedMonth).then((data) => {
-      setInvoices(Array.isArray(data) ? data : [])
-      setLoadingInvoices(false)
-    })
-  }, [selectedYear, selectedMonth, workspaceFolder])
+      setInvoices(Array.isArray(data) ? data : []);
+      setLoadingInvoices(false);
+    });
+  }, [selectedYear, selectedMonth, workspaceFolder]);
 
   const handleChangeWorkspace = async () => {
-    const folder = await window.workspace.pickFolder()
-    if (folder) setWorkspaceFolder(folder)
-  }
+    const folder = await window.workspace.pickFolder();
+    if (folder) setWorkspaceFolder(folder);
+  };
   const setTheme = async (newTheme: "system" | "dark" | "light") => {
-    setThemeState(newTheme)
-    await window.theme.setTheme(newTheme)
-  }
+    setThemeState(newTheme);
+    await window.theme.setTheme(newTheme);
+  };
 
-
-
-
-  const currentYear = new Date().getFullYear()
-  const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i)
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
   const months = [
     { value: "1", label: strings["january"] || "January" },
     { value: "2", label: strings["february"] || "February" },
@@ -80,131 +89,167 @@ export function App() {
     { value: "10", label: strings["october"] || "October" },
     { value: "11", label: strings["november"] || "November" },
     { value: "12", label: strings["december"] || "December" },
-  ]
+  ];
 
   const persistInvoices = (newInvoices: Invoice[]) => {
-    setInvoices(newInvoices)
-    window.invoices?.write(selectedYear, selectedMonth, newInvoices)
-  }
+    setInvoices(newInvoices);
+    window.invoices?.write(selectedYear, selectedMonth, newInvoices);
+  };
 
   const addInvoice = (invoice: Omit<Invoice, "id">) => {
     const newInvoice: Invoice = {
       ...invoice,
       id: Date.now().toString(),
-    }
-    persistInvoices([...invoices, newInvoice])
-  }
+    };
+    persistInvoices([...invoices, newInvoice]);
+  };
 
   const updateInvoice = (id: string, updatedData: Partial<Invoice>) => {
-    const updated = invoices.map((invoice) => (invoice.id === id ? { ...invoice, ...updatedData } : invoice))
-    persistInvoices(updated)
-  }
+    const updated = invoices.map((invoice) =>
+      invoice.id === id ? { ...invoice, ...updatedData } : invoice
+    );
+    persistInvoices(updated);
+  };
 
   const deleteInvoice = (id: string) => {
-    const updated = invoices.filter((invoice) => invoice.id !== id)
-    persistInvoices(updated)
-  }
+    const updated = invoices.filter((invoice) => invoice.id !== id);
+    persistInvoices(updated);
+  };
 
   const getNextNumber = () => {
     if (invoices.length === 0)
-      return `${INVOICE_CONFIG.DEFAULT_NUMBER_PREFIX}${"1".padStart(INVOICE_CONFIG.NUMBER_LEADING_ZEROS, "0")}`
+      return `${INVOICE_CONFIG.DEFAULT_NUMBER_PREFIX}${"1".padStart(
+        INVOICE_CONFIG.NUMBER_LEADING_ZEROS,
+        "0"
+      )}`;
 
     const lastNumbers = invoices
       .map((inv) => inv.number)
       .filter((num) => num.startsWith(INVOICE_CONFIG.DEFAULT_NUMBER_PREFIX))
-      .map((num) => Number.parseInt(num.replace(INVOICE_CONFIG.DEFAULT_NUMBER_PREFIX, "")))
-      .filter((num) => !isNaN(num))
+      .map((num) =>
+        Number.parseInt(num.replace(INVOICE_CONFIG.DEFAULT_NUMBER_PREFIX, ""))
+      )
+      .filter((num) => !isNaN(num));
 
     if (lastNumbers.length === 0)
-      return `${INVOICE_CONFIG.DEFAULT_NUMBER_PREFIX}${"1".padStart(INVOICE_CONFIG.NUMBER_LEADING_ZEROS, "0")}`
-    const nextNum = Math.max(...lastNumbers) + 1
-    return `${INVOICE_CONFIG.DEFAULT_NUMBER_PREFIX}${nextNum.toString().padStart(INVOICE_CONFIG.NUMBER_LEADING_ZEROS, "0")}`
-  }
+      return `${INVOICE_CONFIG.DEFAULT_NUMBER_PREFIX}${"1".padStart(
+        INVOICE_CONFIG.NUMBER_LEADING_ZEROS,
+        "0"
+      )}`;
+    const nextNum = Math.max(...lastNumbers) + 1;
+    return `${INVOICE_CONFIG.DEFAULT_NUMBER_PREFIX}${nextNum
+      .toString()
+      .padStart(INVOICE_CONFIG.NUMBER_LEADING_ZEROS, "0")}`;
+  };
 
   const getNextAtcud = () => {
     if (invoices.length === 0)
-      return `${INVOICE_CONFIG.DEFAULT_ATCUD_PREFIX}${"1".padStart(INVOICE_CONFIG.ATCUD_LEADING_ZEROS, "0")}`
+      return `${INVOICE_CONFIG.DEFAULT_ATCUD_PREFIX}${"1".padStart(
+        INVOICE_CONFIG.ATCUD_LEADING_ZEROS,
+        "0"
+      )}`;
 
     const lastAtcuds = invoices
       .map((inv) => inv.atcud)
       .filter((atcud) => atcud.startsWith(INVOICE_CONFIG.DEFAULT_ATCUD_PREFIX))
-      .map((atcud) => Number.parseInt(atcud.replace(INVOICE_CONFIG.DEFAULT_ATCUD_PREFIX, "")))
-      .filter((num) => !isNaN(num))
+      .map((atcud) =>
+        Number.parseInt(atcud.replace(INVOICE_CONFIG.DEFAULT_ATCUD_PREFIX, ""))
+      )
+      .filter((num) => !isNaN(num));
 
     if (lastAtcuds.length === 0)
-      return `${INVOICE_CONFIG.DEFAULT_ATCUD_PREFIX}${"1".padStart(INVOICE_CONFIG.ATCUD_LEADING_ZEROS, "0")}`
-    const nextNum = Math.max(...lastAtcuds) + 1
-    return `${INVOICE_CONFIG.DEFAULT_ATCUD_PREFIX}${nextNum.toString().padStart(INVOICE_CONFIG.ATCUD_LEADING_ZEROS, "0")}`
-  }
+      return `${INVOICE_CONFIG.DEFAULT_ATCUD_PREFIX}${"1".padStart(
+        INVOICE_CONFIG.ATCUD_LEADING_ZEROS,
+        "0"
+      )}`;
+    const nextNum = Math.max(...lastAtcuds) + 1;
+    return `${INVOICE_CONFIG.DEFAULT_ATCUD_PREFIX}${nextNum
+      .toString()
+      .padStart(INVOICE_CONFIG.ATCUD_LEADING_ZEROS, "0")}`;
+  };
 
   const filteredAndSortedInvoices = () => {
-    let filtered = invoices
+    let filtered = invoices;
 
     // Apply date filter first (filter by selected year and month)
     filtered = filtered.filter((invoice) => {
-      const invoiceDate = new Date(invoice.date)
-      const invoiceYear = invoiceDate.getFullYear()
-      const invoiceMonth = invoiceDate.getMonth() + 1 // getMonth() returns 0-11, we need 1-12
+      const invoiceDate = new Date(invoice.date);
+      const invoiceYear = invoiceDate.getFullYear();
+      const invoiceMonth = invoiceDate.getMonth() + 1; // getMonth() returns 0-11, we need 1-12
 
-      return invoiceYear === Number.parseInt(selectedYear) && invoiceMonth === Number.parseInt(selectedMonth)
-    })
+      return (
+        invoiceYear === Number.parseInt(selectedYear) &&
+        invoiceMonth === Number.parseInt(selectedMonth)
+      );
+    });
 
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter((invoice) => {
-        const searchLower = searchTerm.toLowerCase()
+        const searchLower = searchTerm.toLowerCase();
         return (
           invoice.number.toLowerCase().includes(searchLower) ||
           invoice.atcud.toLowerCase().includes(searchLower) ||
           invoice.nif.toLowerCase().includes(searchLower) ||
           invoice.date.includes(searchTerm) ||
           invoice.amount.toString().includes(searchLower)
-        )
-      })
+        );
+      });
     }
 
     // Apply sorting
     return filtered.sort((a, b) => {
-      let aValue = a[sortColumn]
-      let bValue = b[sortColumn]
+      let aValue = a[sortColumn];
+      let bValue = b[sortColumn];
 
       // Handle different data types
       if (typeof aValue === "string") {
-        aValue = aValue.toLowerCase()
-        bValue = (bValue as string).toLowerCase()
+        aValue = aValue.toLowerCase();
+        bValue = (bValue as string).toLowerCase();
       }
 
       if (aValue < bValue) {
-        return sortDirection === "asc" ? -1 : 1
+        return sortDirection === "asc" ? -1 : 1;
       }
       if (aValue > bValue) {
-        return sortDirection === "asc" ? 1 : -1
+        return sortDirection === "asc" ? 1 : -1;
       }
-      return 0
-    })
-  }
+      return 0;
+    });
+  };
 
   const handleSort = (column: keyof Invoice) => {
     if (sortColumn === column) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
-      setSortColumn(column)
-      setSortDirection("asc")
+      setSortColumn(column);
+      setSortDirection("asc");
     }
-  }
+  };
 
   return (
-    <div className={cn("p-6 space-y-6 bg-background text-foreground w-screen h-screen flex flex-col", theme === "system" ? systemTheme : theme)}>
+    <div
+      className={cn(
+        "p-6 space-y-6 bg-background text-foreground w-screen h-screen flex flex-col",
+        theme === "system" ? systemTheme : theme
+      )}
+    >
       <div className="flex w-full justify-between items-center">
         <h1 className="text-2xl font-bold">
           {workspaceFolder ? workspaceFolder.split(/[/\\]/).pop() : ""}
         </h1>
         <Tabs value={tab}>
           <TabsList>
-            <TabsTrigger value="registration" onClick={() => setTab("registration")}>
+            <TabsTrigger
+              value="registration"
+              onClick={() => setTab("registration")}
+            >
               {strings["registration"] || "Registration"}
             </TabsTrigger>
-            <TabsTrigger value="submission" onClick={() => setTab("submission")}>
+            <TabsTrigger
+              value="submission"
+              onClick={() => setTab("submission")}
+            >
               {strings["submission"] || "Submission"}
             </TabsTrigger>
           </TabsList>
@@ -223,25 +268,31 @@ export function App() {
             size={"icon"}
             onClick={() => {
               if (theme === "system") {
-                setTheme("dark")
+                setTheme("dark");
               } else if (theme === "dark") {
-                setTheme("light")
+                setTheme("light");
               } else {
-                setTheme("system")
+                setTheme("system");
               }
             }}
             title={strings["change_theme"] || "Change theme"}
           >
-            {theme === "system" ? <Laptop className="h-4 w-4" /> : (
-              theme === "dark" ? (
-                <Moon className="h-4 w-4" />
-              ) : (
-                <Sun className="h-4 w-4" />
-              )
+            {theme === "system" ? (
+              <Laptop className="h-4 w-4" />
+            ) : theme === "dark" ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
             )}
           </Button>
-          <Select value={language} onValueChange={val => setLanguage(val as 'en' | 'pt')}>
-            <SelectTrigger className="w-24" title={strings["language"] || "Language"}>
+          <Select
+            value={language}
+            onValueChange={(val) => setLanguage(val as "en" | "pt")}
+          >
+            <SelectTrigger
+              className="w-24"
+              title={strings["language"] || "Language"}
+            >
               <Languages className="h-4 w-4 mr-1 inline" />
               <SelectValue />
             </SelectTrigger>
@@ -295,20 +346,15 @@ export function App() {
           )}
         </div>
 
-        <div
-          className="hidden lg:flex items-center gap-4 border-border border-[1px] rounded-md px-3 py-1.5 shadow-xs"
-        >
-          <div>
-            Total mensal:
+        <div className="hidden lg:flex items-center gap-4 border-border border-[1px] rounded-md px-3 py-1.5 shadow-xs">
+          <div>Total mensal:</div>
+          <div className="font-bold">
+            {filteredAndSortedInvoices()
+              .reduce((acc, invoice) => acc + invoice.amount, 0)
+              .toFixed(2)}{" "}
+            €
           </div>
-          <div
-            className="font-bold"
-          >
-            {filteredAndSortedInvoices().reduce((acc, invoice) => acc + invoice.amount, 0).toFixed(2)} €
-          </div>
-          <div
-            className="text-xs"
-          >
+          <div className="text-xs">
             ({filteredAndSortedInvoices().length} faturas)
           </div>
         </div>
@@ -318,11 +364,12 @@ export function App() {
             <Plus className="h-4 w-4 mr-2" />
             {strings["add_invoice"] || "Add Invoice"}
           </Button>
-        ) : <div />}
+        ) : (
+          <div />
+        )}
       </div>
 
       {tab === "registration" ? (
-
         loadingInvoices ? (
           <div className="text-center text-gray-500">Loading invoices...</div>
         ) : (
@@ -337,8 +384,7 @@ export function App() {
         )
       ) : (
         <InvoiceSubmission invoices={filteredAndSortedInvoices()} />
-      )
-      }
+      )}
 
       <AddInvoiceDialog
         open={isDialogOpen}
@@ -351,5 +397,5 @@ export function App() {
         theme={theme === "system" ? systemTheme : theme}
       />
     </div>
-  )
+  );
 }
