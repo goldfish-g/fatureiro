@@ -31,5 +31,7 @@
   "current_prefix": "Prefixo atual:",
   "day": "Dia",
   "amount": "Montante",
-  "cancel": "Cancelar"
+  "cancel": "Cancelar",
+  "dictate_invoices": "Ditar Faturas",
+  "nif": "nífe"
 }

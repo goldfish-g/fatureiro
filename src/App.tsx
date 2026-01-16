@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useStrings } from "./lib/strings-context";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Laptop, Moon, Plus, Sun, Folder, Languages } from "lucide-react";
+import { Laptop, Moon, Plus, Sun, Folder, Languages, Volume2 } from "lucide-react";
 import { InvoiceTable } from "@/components/invoice-table";
 import { AddInvoiceDialog } from "@/components/add-invoice-dialog";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,7 @@ export function App() {
   );
   const [systemTheme, setSystemTheme] = useState<"dark" | "light">("light");
   const [workspaceFolder, setWorkspaceFolder] = useState<string | null>(null);
+  const isDictatingRef = useRef(false);
   const { strings, language, setLanguage } = useStrings();
   useEffect(() => {
     const themeGetter = async () => {
@@ -160,6 +161,140 @@ export function App() {
     // Set insert mode and open dialog
     setInsertMode({ active: true, index });
     setIsDialogOpen(true);
+  };
+
+  const dictateInvoices = () => {
+    // Check if speech synthesis is supported
+    if (!('speechSynthesis' in window)) {
+      alert('Speech synthesis is not supported in this browser');
+      return;
+    }
+
+    // If already dictating, stop
+    if (isDictatingRef.current) {
+      window.speechSynthesis.cancel();
+      isDictatingRef.current = false;
+      return;
+    }
+
+    const sortedInvoices = filteredAndSortedInvoices();
+    if (sortedInvoices.length === 0) return;
+
+    isDictatingRef.current = true;
+
+    // Determine language code and locale
+    const langCode = language === 'pt' ? 'pt-PT' : 'en-US';
+    const locale = language === 'pt' ? 'pt-PT' : 'en-US';
+
+    // Get the appropriate voice for the language
+    const getVoice = (): SpeechSynthesisVoice | null => {
+      const voices = window.speechSynthesis.getVoices();
+      console.log({voices})
+      
+      // For Portuguese, prefer Brazilian or Portugal Portuguese voices
+      if (language === 'pt') {
+        const ptVoice = voices.find(voice => 
+          voice.lang === 'pt-PT' || voice.lang === 'pt-BR' || voice.lang.startsWith('pt')
+        );
+        if (ptVoice) return ptVoice;
+      } else {
+        // For English, prefer US English
+        const enVoice = voices.find(voice => 
+          voice.lang === 'en-US' || voice.lang.startsWith('en')
+        );
+        if (enVoice) return enVoice;
+      }
+      
+      return voices[0] || null;
+    };
+
+    let lastDate = '';
+    const utterances: SpeechSynthesisUtterance[] = [];
+
+    sortedInvoices.forEach((invoice) => {
+      // Check if date has changed
+      if (invoice.date !== lastDate) {
+        const date = new Date(invoice.date);
+        const dateString = date.toLocaleDateString(locale, { day: 'numeric', month: 'long' });
+        const dateUtterance = new SpeechSynthesisUtterance(dateString);
+        dateUtterance.lang = langCode;
+        dateUtterance.rate = 0.9;
+        utterances.push(dateUtterance);
+        lastDate = invoice.date;
+      }
+
+      // Dictate NIF if present
+      if (invoice.nif && invoice.nif.trim() !== '') {
+        // Say "NIF" first
+        const nifLabelUtterance = new SpeechSynthesisUtterance(strings["nif"] || "NIF");
+        nifLabelUtterance.lang = langCode;
+        nifLabelUtterance.rate = 0.8;
+        utterances.push(nifLabelUtterance);
+        
+        // Split NIF into groups of 3 digits and add each as separate utterance
+        const nifDigits = invoice.nif.replace(/\D/g, ''); // Remove non-digits
+        for (let i = 0; i < nifDigits.length; i += 3) {
+          const group = nifDigits.slice(i, i + 3);
+          const groupUtterance = new SpeechSynthesisUtterance(group);
+          groupUtterance.lang = langCode;
+          groupUtterance.rate = 0.8;
+          utterances.push(groupUtterance);
+        }
+      }
+
+      // Dictate amount
+      const hasDecimals = invoice.amount % 1 !== 0;
+      const amountString = hasDecimals 
+        ? invoice.amount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : invoice.amount.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      const amountUtterance = new SpeechSynthesisUtterance(amountString);
+      amountUtterance.lang = langCode;
+      amountUtterance.rate = 0.9;
+      (amountUtterance as any).isEndOfInvoice = true; // Mark as end of invoice
+      utterances.push(amountUtterance);
+    });
+
+    // Function to start speaking with proper voice
+    const startSpeaking = () => {
+      const voice = getVoice();
+      
+      // Set voice for all utterances
+      utterances.forEach(u => {
+        u.voice = voice;
+        u.lang = langCode; // Ensure lang is set even if voice isn't available
+      });
+
+      // Speak all utterances with pauses
+      let currentIndex = 0;
+      const speakNext = () => {
+        if (!isDictatingRef.current || currentIndex >= utterances.length) {
+          isDictatingRef.current = false;
+          return;
+        }
+        
+        const utterance = utterances[currentIndex];
+        utterance.onend = () => {
+          currentIndex++;
+          // Use longer pause after end of invoice (amount)
+          const delay = (utterance as any).isEndOfInvoice ? 700 : 300;
+          setTimeout(speakNext, delay);
+        };
+        utterance.onerror = () => {
+          isDictatingRef.current = false;
+        };
+        window.speechSynthesis.speak(utterance);
+      };
+
+      speakNext();
+    };
+
+    // Ensure voices are loaded before starting
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) {
+      window.speechSynthesis.onvoiceschanged = startSpeaking;
+    } else {
+      startSpeaking();
+    }
   };
 
   const getNextNumber = () => {
@@ -418,13 +553,23 @@ export function App() {
         </div>
 
         {tab === "registration" ? (
-          <Button onClick={() => {
-            setInsertMode({ active: false, index: null });
-            setIsDialogOpen(true);
-          }}>
-            <Plus className="h-4 w-4 mr-2" />
-            {strings["add_invoice"] || "Add Invoice"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => dictateInvoices()}
+              title={strings["dictate_invoices"] || "Dictate Invoices"}
+            >
+              <Volume2 className="h-4 w-4" />
+            </Button>
+            <Button onClick={() => {
+              setInsertMode({ active: false, index: null });
+              setIsDialogOpen(true);
+            }}>
+              <Plus className="h-4 w-4 mr-2" />
+              {strings["add_invoice"] || "Add Invoice"}
+            </Button>
+          </div>
         ) : (
           <div />
         )}

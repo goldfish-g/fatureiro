@@ -31,5 +31,7 @@
   "current_prefix": "Current prefix:",
   "day": "Day",
   "amount": "Amount",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "dictate_invoices": "Dictate Invoices",
+  "nif": "nif"
 }
