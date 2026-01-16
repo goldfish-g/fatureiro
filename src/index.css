@@ -118,3 +118,7 @@
     @apply bg-background text-foreground;
   }
 }
+
+.tooltip-no-arrow svg {
+  display: none !important;
+}

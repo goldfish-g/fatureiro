@@ -19,6 +19,12 @@ import { INVOICE_CONFIG } from "@/lib/config";
 import { cn } from "./lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { InvoiceSubmission } from "./components/invoice-submission";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function App() {
   const [selectedYear, setSelectedYear] = useState<string>(
@@ -28,6 +34,7 @@ export function App() {
     (new Date().getMonth() + 1).toString()
   );
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [yearlyInvoices, setYearlyInvoices] = useState<Invoice[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [insertMode, setInsertMode] = useState<{ active: boolean; index: number | null }>({ active: false, index: null });
@@ -66,6 +73,24 @@ export function App() {
       setLoadingInvoices(false);
     });
   }, [selectedYear, selectedMonth, workspaceFolder]);
+
+  // Load all invoices for the selected year to calculate yearly total
+  useEffect(() => {
+    if (!workspaceFolder) return;
+    
+    const loadYearlyInvoices = async () => {
+      const allInvoices: Invoice[] = [];
+      for (let month = 1; month <= 12; month++) {
+        const data = await window.invoices.read(selectedYear, month.toString());
+        if (Array.isArray(data)) {
+          allInvoices.push(...data);
+        }
+      }
+      setYearlyInvoices(allInvoices);
+    };
+
+    loadYearlyInvoices();
+  }, [selectedYear, workspaceFolder, invoices]);
 
   const handleChangeWorkspace = async () => {
     const folder = await window.workspace.pickFolder();
@@ -539,18 +564,38 @@ export function App() {
           )}
         </div>
 
-        <div className="hidden lg:flex items-center gap-4 border-border border-[1px] rounded-md px-3 py-1.5 shadow-xs">
-          <div>Total mensal:</div>
-          <div className="font-bold">
-            {filteredAndSortedInvoices()
-              .reduce((acc, invoice) => acc + invoice.amount, 0)
-              .toFixed(2)}{" "}
-            €
-          </div>
-          <div className="text-xs">
-            ({filteredAndSortedInvoices().length} faturas)
-          </div>
-        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="hidden lg:flex items-center gap-4 border-border border-[1px] rounded-md px-3 py-1.5 shadow-xs cursor-help">
+                <div>Total mensal:</div>
+                <div className="font-bold">
+                  {filteredAndSortedInvoices()
+                    .reduce((acc, invoice) => acc + invoice.amount, 0)
+                    .toFixed(2)}{" "}
+                  €
+                </div>
+                <div className="text-xs">
+                  ({filteredAndSortedInvoices().length} faturas)
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="tooltip-no-arrow bg-background text-foreground border border-border px-3 py-1.5 shadow-xs text-md" side={"bottom"} sideOffset={0}>
+              <div className="flex items-center gap-4">
+                <div>Total anual:</div>
+                <div className="font-bold">
+                  {yearlyInvoices
+                    .reduce((acc, invoice) => acc + invoice.amount, 0)
+                    .toFixed(2)}{" "}
+                  €
+                </div>
+                <div className="text-xs">
+                  ({yearlyInvoices.length} faturas)
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {tab === "registration" ? (
           <div className="flex gap-2">
