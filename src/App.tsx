@@ -30,6 +30,7 @@ export function App() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [insertMode, setInsertMode] = useState<{ active: boolean; index: number | null }>({ active: false, index: null });
   const [searchTerm, setSearchTerm] = useState("");
   const [sortColumn, setSortColumn] = useState<keyof Invoice>("number");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -101,7 +102,46 @@ export function App() {
       ...invoice,
       id: Date.now().toString(),
     };
-    persistInvoices([...invoices, newInvoice]);
+    
+    // Check if we're in insert mode
+    if (insertMode.active && insertMode.index !== null) {
+      // Insert at the specified index
+      const updatedInvoices = [
+        ...invoices.slice(0, insertMode.index),
+        newInvoice,
+        ...invoices.slice(insertMode.index),
+      ];
+      
+      // Increment Number and ATCUD for all invoices from insertion point onwards
+      const incrementedInvoices = updatedInvoices.map((inv, idx) => {
+        if (idx <= insertMode.index!) return inv; // Keep invoices at and before insertion point unchanged
+        
+        const invoiceNumberMatch = inv.number.match(/^(.+?)(\d+)$/);
+        const invoiceAtcudMatch = inv.atcud.match(/^(.+?)(\d+)$/);
+        
+        if (!invoiceNumberMatch || !invoiceAtcudMatch) return inv;
+        
+        const numberPrefix = invoiceNumberMatch[1];
+        const numberValue = parseInt(invoiceNumberMatch[2]);
+        const atcudPrefix = invoiceAtcudMatch[1];
+        const atcudValue = parseInt(invoiceAtcudMatch[2]);
+        
+        return {
+          ...inv,
+          number: numberPrefix + (numberValue + 1).toString().padStart(invoiceNumberMatch[2].length, '0'),
+          atcud: atcudPrefix + (atcudValue + 1).toString().padStart(invoiceAtcudMatch[2].length, '0'),
+        };
+      });
+      
+      persistInvoices(incrementedInvoices);
+      
+      // Reset insert mode and close dialog
+      setInsertMode({ active: false, index: null });
+      setIsDialogOpen(false);
+    } else {
+      // Normal add mode - append to end
+      persistInvoices([...invoices, newInvoice]);
+    }
   };
 
   const updateInvoice = (id: string, updatedData: Partial<Invoice>) => {
@@ -116,7 +156,19 @@ export function App() {
     persistInvoices(updated);
   };
 
+  const insertInvoice = (index: number) => {
+    // Set insert mode and open dialog
+    setInsertMode({ active: true, index });
+    setIsDialogOpen(true);
+  };
+
   const getNextNumber = () => {
+    // If in insert mode, use the template invoice number
+    if (insertMode.active && insertMode.index !== null) {
+      const templateInvoice = invoices[insertMode.index];
+      return templateInvoice.number;
+    }
+    
     if (invoices.length === 0)
       return `${INVOICE_CONFIG.DEFAULT_NUMBER_PREFIX}${"1".padStart(
         INVOICE_CONFIG.NUMBER_LEADING_ZEROS,
@@ -143,6 +195,12 @@ export function App() {
   };
 
   const getNextAtcud = () => {
+    // If in insert mode, use the template invoice atcud
+    if (insertMode.active && insertMode.index !== null) {
+      const templateInvoice = invoices[insertMode.index];
+      return templateInvoice.atcud;
+    }
+    
     if (invoices.length === 0)
       return `${INVOICE_CONFIG.DEFAULT_ATCUD_PREFIX}${"1".padStart(
         INVOICE_CONFIG.ATCUD_LEADING_ZEROS,
@@ -360,7 +418,10 @@ export function App() {
         </div>
 
         {tab === "registration" ? (
-          <Button onClick={() => setIsDialogOpen(true)}>
+          <Button onClick={() => {
+            setInsertMode({ active: false, index: null });
+            setIsDialogOpen(true);
+          }}>
             <Plus className="h-4 w-4 mr-2" />
             {strings["add_invoice"] || "Add Invoice"}
           </Button>
@@ -377,6 +438,7 @@ export function App() {
             invoices={filteredAndSortedInvoices()}
             onUpdateInvoice={updateInvoice}
             onDeleteInvoice={deleteInvoice}
+            onInsertInvoice={insertInvoice}
             sortColumn={sortColumn}
             sortDirection={sortDirection}
             onSort={handleSort}
@@ -388,7 +450,12 @@ export function App() {
 
       <AddInvoiceDialog
         open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            setInsertMode({ active: false, index: null });
+          }
+        }}
         onAddInvoice={addInvoice}
         nextNumber={getNextNumber()}
         nextAtcud={getNextAtcud()}

@@ -32,6 +32,7 @@ interface InvoiceTableProps {
   invoices: Invoice[];
   onUpdateInvoice: (id: string, updatedInvoice: Partial<Invoice>) => void;
   onDeleteInvoice: (id: string) => void;
+  onInsertInvoice: (index: number) => void;
   sortColumn: keyof Invoice;
   sortDirection: "asc" | "desc";
   onSort: (column: keyof Invoice) => void;
@@ -78,6 +79,7 @@ export function InvoiceTable({
   invoices,
   onUpdateInvoice,
   onDeleteInvoice,
+  onInsertInvoice,
   sortColumn,
   sortDirection,
   onSort,
@@ -85,6 +87,7 @@ export function InvoiceTable({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingData, setEditingData] = useState<Partial<Invoice>>({});
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
+  const [hoveredRowBorder, setHoveredRowBorder] = useState<number | null>(null);
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -221,17 +224,39 @@ export function InvoiceTable({
               invoices.map((invoice, idx) => {
                 const isSelected = selectedRow === idx;
                 return (
-                  <TableRow
-                    key={invoice.id}
-                    id={invoice.id}
-                    tabIndex={0}
-                    ref={(el) => (rowRefs.current[idx] = el)}
-                    className={isSelected ? "bg-blue-100/60" : ""}
-                    onClick={() => setSelectedRow(idx)}
-                    onKeyDown={handleKeyDown}
-                    style={{ cursor: "pointer" }}
-                    aria-selected={isSelected}
-                  >
+                  <>
+                    {/* Insertable divider before row */}
+                    <tr
+                      className="relative h-0"
+                      style={{ height: 0 }}
+                    >
+                      <td colSpan={6} className="p-0 relative">
+                        <div
+                          className="absolute inset-x-0 -top-[2px] h-[4px] cursor-pointer transition-all"
+                          style={{
+                            backgroundColor: hoveredRowBorder === idx ? '#3b82f6' : 'transparent',
+                            height: hoveredRowBorder === idx ? '4px' : '4px',
+                          }}
+                          onMouseEnter={() => setHoveredRowBorder(idx)}
+                          onMouseLeave={() => setHoveredRowBorder(null)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onInsertInvoice(idx);
+                          }}
+                        />
+                      </td>
+                    </tr>
+                    <TableRow
+                      key={invoice.id}
+                      id={invoice.id}
+                      tabIndex={0}
+                      ref={(el) => (rowRefs.current[idx] = el)}
+                      className={isSelected ? "bg-blue-100/60" : ""}
+                      onClick={() => setSelectedRow(idx)}
+                      onKeyDown={handleKeyDown}
+                      style={{ cursor: "pointer" }}
+                      aria-selected={isSelected}
+                    >
                     <TableCell className="font-medium">
                       {editingId === invoice.id ? (
                         <Input
@@ -377,6 +402,7 @@ export function InvoiceTable({
                       )}
                     </TableCell>
                   </TableRow>
+                  </>
                 );
               })
             )}
